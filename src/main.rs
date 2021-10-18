@@ -1,10 +1,11 @@
 use {
     console::Term,
     std::{
-        io::{Read, Result, Write},
+        io::{ErrorKind::WouldBlock, Read, Result, Write},
         net::TcpStream,
         sync::{Arc, RwLock},
-        thread::spawn,
+        thread::{sleep, spawn},
+        time::Duration,
     },
 };
 
@@ -79,7 +80,6 @@ fn handle_client(
     stdout.write_all(&client.read().unwrap().format())?;
     stdout.flush()?;
 
-    //  FIX //  "Parking" implementation -> Reduce CPU load
     loop {
         if let Ok(open_guard) = open.read() {
             if *open_guard {
@@ -87,12 +87,18 @@ fn handle_client(
 
                 if let Ok(mut client_guard) = client.write() {
                     let area = &mut [0; 25];
-                    if let Ok(()) = client_guard.stream.read_exact(area) {
-                        client_guard.area.data = area.to_vec();
+                    match client_guard.stream.read_exact(area) {
+                        Ok(()) => {
+                            client_guard.area.data = area.to_vec();
 
-                        stdout.clear_screen()?;
-                        stdout.write_all(&client_guard.format())?;
-                        stdout.flush()?;
+                            stdout.clear_screen()?;
+                            stdout.write_all(&client_guard.format())?;
+                            stdout.flush()?;
+                        }
+                        Err(e) => match e.kind() {
+                            WouldBlock => sleep(Duration::from_micros(1)), //  Temporary CPU Usage fix
+                            _ => (),
+                        },
                     }
                 }
             }
@@ -120,7 +126,6 @@ fn main() -> Result<()> {
         let data = &mut [0; 25];
         stream.read_exact(data)?;
 
-        //  High CPU usage
         stream.set_nonblocking(true)?;
 
         Ok(Client {
