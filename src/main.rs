@@ -6,6 +6,7 @@ use {
     client::Client,
     console::Term,
     std::{
+        env::args,
         io::{ErrorKind::WouldBlock, Read, Result, Write},
         net::TcpStream,
         sync::{Arc, RwLock},
@@ -23,7 +24,24 @@ fn main() -> Result<()> {
     stdout.flush()?;
 
     let client = Arc::new(RwLock::new((|| -> Result<Client> {
-        let mut stream = TcpStream::connect("127.0.0.1:6969")?;
+        let mut stream = TcpStream::connect(
+            if let Some(tsa) = (|| -> Option<String> {
+                let mut a = args();
+                if a.len() == 3 {
+                    let mut tsa = "".to_owned();
+                    tsa.push_str(&a.nth(1)?);
+                    tsa.push(':');
+                    tsa.push_str(&a.next()?);
+                    Some(tsa)
+                } else {
+                    None
+                }
+            })() {
+                tsa
+            } else {
+                String::from("127.0.0.1:6969")
+            },
+        )?;
 
         let rows = &mut [0; 1];
         stream.read_exact(rows)?;
@@ -86,7 +104,7 @@ fn main() -> Result<()> {
     });
 
     loop {
-        if let Ok(c) = Term::stdout().read_char() {
+        if let Ok(c) = Term::buffered_stdout().read_char() {
             if let key @ (119 | 97 | 115 | 100 | 113) = c as u8 {
                 if key == 113 {
                     break Ok(());
