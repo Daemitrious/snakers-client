@@ -1,4 +1,4 @@
-use crate::{Direction, Direction::*};
+use crate::{Key, Key::*};
 
 pub struct Area {
     pub rows: usize,
@@ -45,34 +45,35 @@ impl Area {
             .collect()
     }
 
-    pub fn can_move(&self, direction: Direction, area_i: usize) -> Option<usize> {
-        let mut p = area_i.clone();
+    pub fn can_move(&self, key: Key, position: usize) -> Option<usize> {
+        let mut new = position.clone();
 
-        match direction {
+        match key {
             W => {
-                if p / self.rows > 0 {
-                    p -= self.rows;
+                if new / self.rows > 0 {
+                    new -= self.rows;
                 }
             }
             A => {
-                if p % self.columns > 0 {
-                    p -= 1;
+                if new % self.columns > 0 {
+                    new -= 1;
                 }
             }
             S => {
-                if p / self.rows < self.rows - 1 {
-                    p += self.rows;
+                if new / self.rows < self.rows - 1 {
+                    new += self.rows;
                 }
             }
             D => {
-                if p % self.columns < self.columns - 1 {
-                    p += 1;
+                if new % self.columns < self.columns - 1 {
+                    new += 1;
                 }
             }
+            _ => unreachable!(),
         }
 
-        if p != area_i && self.data[p] != 111 {
-            Some(p)
+        if position != new {
+            Some(new)
         } else {
             None
         }
