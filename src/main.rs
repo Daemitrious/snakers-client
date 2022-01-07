@@ -107,7 +107,6 @@ fn main() -> Result<()> {
                 .finalize()
                 .new_category("Misc")
                 .new_section()
-                .add_pair("H", "Help")
                 .add_pair("Q", "Exit")
                 .finalize()
                 .finalize()
@@ -115,6 +114,7 @@ fn main() -> Result<()> {
                 .into_bytes(),
         )?;
         stdout.flush()?;
+        stdout.move_cursor_to(0, 0)?;
 
         let time = Duration::from_micros(1);
 
